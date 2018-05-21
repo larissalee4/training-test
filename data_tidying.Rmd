@@ -61,4 +61,24 @@ catch_df %>%
   summarise(mean_catch = mean(catch)) %>% #summarize by catch
   arrange(desc(mean_catch)) #arrange in descending order
 ```
+# Joins
+
+```{r Joins}
+region_defs <- read.csv(url("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df35b.303.1", method = "libcurl"),
+                        stringsAsFactors = FALSE)
+head(region_defs)
+```
+
+```{r}
+region_defs <- region_defs %>%
+  select(code, mgmtArea) %>%
+  rename(Region = code, Region_Name = mgmtArea)
+
+head(region_defs)
+```
+
+```{r}
+catch_joined <- left_join(catch_df, region_defs)
+head(catch_joined)
+```
 
