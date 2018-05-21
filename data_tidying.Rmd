@@ -14,15 +14,51 @@ library(dplyr)
 library(tidyr)
 ```
 
-```{r}
+Read in data from the [KNB](https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df35b.302.1)
+
+```{r get_data}
 catch_df <-read.csv(url("https://knb.ecoinformatics.org/knb/d1/mn/v2/object/df35b.302.1", method = "libcurl"),
                     stringsAsFactors = FALSE)
-head(catch_df)
 ```
+
+Selected columns that I wanted, moved from wide to long format, and renamed a column
 
 ```{r Remove Summary & Notes}
 catch_df<- catch_df %>%
-  select(Region, Year, Chinook, Sockeye, Coho, Pink, Chum)
-head(catch_df)
+  select(Region, Year, Chinook, Sockeye, Coho, Pink, Chum) %>%
+  gather(key = Species, value = Catch, -Region, -Year) %>%
+  rename(catch_thousands = Catch)
+```
+
+Found a typo in original data, corrected it, converted 'catch_thousands' column to numeric and created a new column with units # of fish. used code below:
+
+{r FindError}
+test <-as.integer(catch_df$catch_thousands)
+which(is.na(test == TRUE))
+catch_df[401, ]
+
+
+```{r EditError_AddCatchColumn}
+catch_df <- catch_df %>%
+    mutate(catch_thousands = ifelse(catch_thousands == "I", 1, catch_thousands)) %>%
+  mutate(catch_thousands = as.integer(catch_thousands)) %>%
+  mutate(catch = catch_thousands * 1000)
+head(catch_df, 30)
+```
+
+# Analysis
+
+```{r Group}
+catch_df %>% 
+  group_by(Species, Year) %>%
+  summarize(mean_catch = mean(catch), num_obs = n())
+```
+
+```{r Filter}
+catch_df %>%
+  filter(Species == "Chinook") %>% # look at only Chinook
+  group_by(Region) %>% #group by region 
+  summarise(mean_catch = mean(catch)) %>% #summarize by catch
+  arrange(desc(mean_catch)) #arrange in descending order
 ```
 
